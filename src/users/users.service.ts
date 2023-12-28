@@ -11,10 +11,10 @@ export class UsersService {
   ) {}
 
   async findByEmail(email: string): Promise<User | undefined> {
-    return this.user_repository.findOneBy({ email: email });
+    return await this.user_repository.findOneByOrFail({ email });
   }
 
   async create(registerDto: RegisterDto): Promise<User> {
-    return this.user_repository.save(registerDto);
+    return await this.user_repository.save(registerDto);
   }
 }

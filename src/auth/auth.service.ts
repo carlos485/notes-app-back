@@ -7,6 +7,7 @@ import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from './dto/register.dto';
 import * as bcryptjs from 'bcrypt';
+import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
@@ -15,12 +16,18 @@ export class AuthService {
     private jwt_service: JwtService,
   ) {}
 
-  async signIn(username: string, pass: string): Promise<any> {
-    const user = await this.users_service.findByEmail(username);
-    if (user?.password !== pass) {
-      throw new UnauthorizedException();
+  async signIn({ email, password }: LoginDto): Promise<any> {
+    const user = await this.users_service.findByEmail(email);
+    if (!user) {
+      throw new UnauthorizedException('Email is wrong');
     }
-    const payload = { sub: user.id, username: user.email };
+
+    const isPasswordValid = await bcryptjs.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Password is wrong');
+    }
+    const payload = { sub: user.id, email: user.email };
     return {
       access_token: await this.jwt_service.signAsync(payload),
     };
@@ -32,7 +39,6 @@ export class AuthService {
       throw new BadRequestException('User already exists');
     }
     registerDto.password = await bcryptjs.hash(registerDto.password, 15);
-    console.log(registerDto);
     return this.users_service.create(registerDto);
   }
 }
